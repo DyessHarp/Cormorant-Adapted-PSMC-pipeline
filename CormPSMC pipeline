@@ -1,0 +1,56 @@
+## Cormorant PSMC Pipeline Overview (Do we wanna include Outputs too? under each section)
+
+#Step 1: Quality Control
+-**Tool** [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+-**Purpose** Assess read quality, GC content, and adapter contamination.
+-**Code**
+
+#Step 2: Read Trimming
+-**Tool** [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
+-**Purpose** Remove low-quality bases and adapter sequences
+-**Code**
+
+#Step 3: Read Mapping
+-**Tool**[BWA-MEM](http://bio-bwa.sourceforge.net/)
+-**Reference Genome** *Phalacrocorax carbo* (NCBI accession: GCA_963921805.1)  (Do we wanna do others as well?)
+-**Purpose** Align clean reads to the reference genome.
+-**Code**
+
+#Step 4: Post-Alignment Processing
+-**Tool** [SAMtools](http://www.htslib.org/)
+-**Purpose** Sort, index, and filter aligned reads.
+-**Code**
+
+#Step 5: Variant Calling and FASTA Conversion
+-**Tool** [BCFtools](https://samtools.github.io/bcftools/)
+-**Purpose** Generate consensus diploid FASTA files compatible with PSMC.
+-**Code**
+
+#Step 6: Demographic Inference/PSMC
+-**Tool** [PSMC](https://github.com/lh3/psmc)
+-**Purpose** Infer changes in effective population size (*Ne*) over time.
+-**Code**
+
+---
+
+#Parameters used
+- Average coverage: 9.58×  
+- Mutation rate: 7 × 10⁻⁹ per site per generation  
+- Generation time: 9.5 years
+
+---
+
+### Directory Structure/workflow (we wanna update this)
+
+
+/data/
+├── raw_fastq/
+├── trimmed/
+├── bam/
+├── fasta/
+└── results/
+
+---
+
+##Acknowledgements
+I want to thank **Fabiola León**, **Francisco Pinilla Riquelme**, and **Paulo Simón Zepeda Godoy** for their guidance and feedback throughout the development of this pipeline. Their insight was invaluable in refining the code and ensuring the reproducibility of each step.
