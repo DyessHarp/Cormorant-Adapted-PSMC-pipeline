@@ -3,33 +3,111 @@
 #Step 1: Quality Control
 -**Tool** [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 -**Purpose** Assess read quality, GC content, and adapter contamination.
--**Code**
+-**Code**:
+source activate preSNPcalling
 
-#Step 2: Read Trimming
+file="Sample_num"
+
+for sample in $file
+do
+fastqc -o /data1/ext_lab/Genomes/prac --noextract -t 2 -f fastq /data1/ext_lab/Genomes/prac/trim/trimmomatic${sample}*_001.fastq.gz
+done
+
+#!/bin/bash
+
+# Activate your environment (if needed)
+source activate preSNPcalling
+
+
+# Directory containing the FastQC results
+fastqc_dir="/data1/ext_lab/Genomes/prac/trim/trimmomatic/multiqc_report"
+
+# Output directory for MultiQC report
+output_dir="/data1/ext_lab/Genomes/prac/trim/trimmomatic/multiqc_report"
+
+# Run MultiQC on the FastQC output
+multiqc $fastqc_dir -o $output_dir
+
+# Inform that MultiQC is done
+echo "MultiQC report done"
+
+#Step 2: Trimming reads
 -**Tool** [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
 -**Purpose** Remove low-quality bases and adapter sequences
--**Code**
+-**Code**:
+#!/bin/bash
+
+#activate trimmomatic
+conda activate trimmomatic
+
+
+GEN=/data1/fabiola/Spheniscus
+TRIM=/data1/fabiola/humboldti
+ADAPT=/data1/fabiola/fabiola_geryon
+
+list="sample_num"
+
+for sample in $list
+do
+
+trimmomatic PE -threads 10 -phred33 $GEN/${sample}_R1_001.fastq.gz $GEN/${sample}_R2_001.fastq.gz -baseout $TRIM/${sample}_trimmed.fq ILLUMINACLIP:$ADAPT/TruSeq2OVR-PE.fa:2:30:10 LEADING:3 SLIDINGWINDOW:4:15 MINLEN:25
+done
 
 #Step 3: Read Mapping
 -**Tool**[BWA-MEM](http://bio-bwa.sourceforge.net/)
 -**Reference Genome** *Phalacrocorax carbo* (NCBI accession: GCA_963921805.1)  (Do we wanna do others as well?)
 -**Purpose** Align clean reads to the reference genome.
--**Code**
+-**Code**:
+#!/bin/bash
 
-#Step 4: Post-Alignment Processing
+# Load conda environment in scripts
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate preSNPcalling
+
+REF=/data1/ext_lab/Genomes/refgenome
+TRIM=/data1/ext_lab/Genomes/prac/trim/trimmomatic
+OUT=/data1/ext_lab/Genomes/prac/bam
+
+files=("sample_num")
+
+for sample in "${files[@]}"
+do
+    echo "Processing $sample..."
+    bwa-mem2 mem -t 2 -M -R "@RG\tID:${sample}\tLB:${sample}\tPL:ILLUMINA\tPU:E00368R\tSM:${sample}" \
+        $REF/hum $TRIM/${sample}_trimmed_1P.fq $TRIM/${sample}_trimmed_2P.fq | \
+        samtools view -q 10 -f 0x2 -bh -@ 2 > $OUT/${sample}.bam
+    echo "$sample finished."
+done
+
+echo "BAM files generated."
+
+
+#Step 4: Post-Alignment Processing (is this what we want exactly?
 -**Tool** [SAMtools](http://www.htslib.org/)
 -**Purpose** Sort, index, and filter aligned reads.
--**Code**
+-**Code**:
+mamba activate preSNPcalling
+
+BAMDIR="/data1/ext_lab/Genomes/prac/bam"
+OUTDIR="${BAMDIR}/sorted"
+mkdir -p "$OUTDIR"
+
+list="sample_num"
+
+for sample in $list
+do
+  samtools sort -o ${OUTDIR}/${sample}_sorted.bam -@ 5 ${BAMDIR}/${sample}.bam
+done
 
 #Step 5: Variant Calling and FASTA Conversion
 -**Tool** [BCFtools](https://samtools.github.io/bcftools/)
 -**Purpose** Generate consensus diploid FASTA files compatible with PSMC.
--**Code**
+-**Code**:
 
 #Step 6: Demographic Inference/PSMC
 -**Tool** [PSMC](https://github.com/lh3/psmc)
 -**Purpose** Infer changes in effective population size (*Ne*) over time.
--**Code**
+-**Code**:
 
 ---
 
@@ -54,3 +132,4 @@
 
 ##Acknowledgements
 I want to thank **Fabiola León**, **Francisco Pinilla Riquelme**, and **Paulo Simón Zepeda Godoy** for their guidance and feedback throughout the development of this pipeline. Their insight was invaluable in refining the code and ensuring the reproducibility of each step.
+I would also like to thank Dr. Richard Phillips of the British Antarctic Survey for providing us with the L. Georgianus samples.
